@@ -31,7 +31,7 @@
  * Thanks to Skye Giordano for several great suggestions!
  * Thanks to Richard Connamacher for excellent improvements to the non-IE behavior!
  */
-;(function($) {
+(function($) {
 
 var lameIE = $.browser.msie && $.browser.version < 9;
 
@@ -65,7 +65,7 @@ $.fn.media = function(options, f1, f2) {
 		var r = getTypesRegExp();
 		var m = r.exec(o.src.toLowerCase()) || [''];
 
-		o.type ? m[0] = o.type : m.shift();
+		m[0] = o.type || m.shift();
 		for (var i=0; i < m.length; i++) {
 			fn = m[i].toLowerCase();
 			if (isDigit(fn[0])) fn = 'fn' + fn; // fns can't begin with numbers
@@ -231,7 +231,7 @@ for (var player in $.fn.media.defaults.players) {
 		$.fn.media[o] = $.fn.media[player] = getGenerator(player);
 		$.fn.media[o+'_player'] = $.fn.media.defaults.players[player];
 	});
-};
+}
 
 function getTypesRegExp() {
 	var types = '';
@@ -240,17 +240,17 @@ function getTypesRegExp() {
 		types += $.fn.media.defaults.players[player].types;
 	};
 	return new RegExp('\\.(' + types.replace(/,/ig,'|') + ')\\b');
-};
+}
 
 function getGenerator(player) {
 	return function(el, options) {
 		return generate(el, options, player);
 	};
-};
+}
 
 function isDigit(c) {
 	return '0123456789'.indexOf(c) > -1;
-};
+}
 
 // flatten all possible options: global defaults, meta, option obj
 function getSettings(el, options) {
@@ -260,23 +260,23 @@ function getSettings(el, options) {
 	// support metadata plugin (v1.0 and v2.0)
 	var meta = $.metadata ? $el.metadata() : $.meta ? $el.data() : {};
 	meta = meta || {};
-	var w = meta.width  || parseInt(((cls.match(/\bw:(\d+)/)||[])[1]||0)) || parseInt(((cls.match(/\bwidth:(\d+)/)||[])[1]||0));
-	var h = meta.height || parseInt(((cls.match(/\bh:(\d+)/)||[])[1]||0)) || parseInt(((cls.match(/\bheight:(\d+)/)||[])[1]||0))
+	var w = meta.width  || parseInt(((cls.match(/\bw:(\d+)/)||[])[1]||0), 10) || parseInt(((cls.match(/\bwidth:(\d+)/)||[])[1]||0), 10);
+	var h = meta.height || parseInt(((cls.match(/\bh:(\d+)/)||[])[1]||0), 10) || parseInt(((cls.match(/\bheight:(\d+)/)||[])[1]||0), 10);
 
-	if (w) meta.width	= w;
+	if (w) meta.width = w;
 	if (h) meta.height = h;
 	if (cls) meta.cls = cls;
 	
 	// crank html5 style data attributes
 	var dataName = 'data-';
-    for (var i=0; i < el.attributes.length; i++) {
-        var a = el.attributes[i], n = $.trim(a.name);
-        var index = n.indexOf(dataName);
-        if (index === 0) {
-        	n = n.substring(dataName.length);
-        	meta[n] = a.value;
-        }
-    }
+	for (var i=0; i < el.attributes.length; i++) {
+		var a = el.attributes[i], n = $.trim(a.name);
+		var index = n.indexOf(dataName);
+		if (index === 0) {
+			n = n.substring(dataName.length);
+			meta[n] = a.value;
+		}
+	}
 
 	var a = $.fn.media.defaults;
 	var b = options;
@@ -293,7 +293,7 @@ function getSettings(el, options) {
 	// make sure we have a source!
 	opts.src = opts.src || $el.attr('href') || $el.attr('src') || 'unknown';
 	return opts;
-};
+}
 
 //
 //	Flash Player
@@ -418,8 +418,8 @@ function generate(el, opts, player) {
 	else if (player == 'img') {
 		o = $('<img>');
 		o.attr('src', opts.src);
-		opts.width && o.attr('width', opts.width);
-		opts.height && o.attr('height', opts.height);
+		if (opts.width) o.attr('width', opts.width);
+		if (opts.height) o.attr('height', opts.height);
 		o.css('backgroundColor', o.bgColor);
 	}
 	else if (lameIE) {
@@ -444,6 +444,8 @@ function generate(el, opts, player) {
 		// Rewritten to be standards compliant by Richard Connamacher
 		var a = ['<object type="' + o.mimetype +'" width="' + opts.width + '" height="' + opts.height +'"'];
 		if (opts.src) a.push(' data="' + opts.src + '" ');
+		for (var key in opts.attrs)
+			a.push(key + '="'+opts.attrs[key]+'" ');
 		if ($.browser.msie) {
 			for (var key in o.ieAttrs || {}) {
 				var v = o.ieAttrs[key];
@@ -463,20 +465,20 @@ function generate(el, opts, player) {
 		a.push('<div><p><strong>'+o.title+' Required</strong></p><p>'+o.title+' is required to view this media. <a href="'+o.pluginspage+'">Download Here</a>.</p></div>');
 		a.push('</ob'+'ject'+'>');
 	}
-	 else {
-	        var a = ['<embed width="' + opts.width + '" height="' + opts.height + '" style="display:block"'];
-	        if (opts.src) a.push(' src="' + opts.src + '" ');
-	        for (var key in opts.attrs)
-	            a.push(key + '="'+opts.attrs[key]+'" ');
-	        for (var key in o.eAttrs || {})
-	            a.push(key + '="'+o.eAttrs[key]+'" ');
-	        for (var key in opts.params) {
-	            if (key == 'wmode' && player != 'flash') // FF3/Quicktime borks on wmode
-	            	continue;
-	            a.push(key + '="'+opts.params[key]+'" ');
-	        }
-	        a.push('></em'+'bed'+'>');
-	    }	
+	else {
+		var a = ['<embed width="' + opts.width + '" height="' + opts.height + '" style="display:block"'];
+		if (opts.src) a.push(' src="' + opts.src + '" ');
+		for (var key in opts.attrs)
+			a.push(key + '="'+opts.attrs[key]+'" ');
+		for (var key in o.eAttrs || {})
+		    a.push(key + '="'+o.eAttrs[key]+'" ');
+		for (var key in opts.params) {
+			if (key == 'wmode' && player != 'flash') // FF3/Quicktime borks on wmode
+				continue;
+			a.push(key + '="'+opts.params[key]+'" ');
+		}
+		a.push('></em'+'bed'+'>');
+	}
 	// convert element to div
 	var id = el.id ? (' id="'+el.id+'"') : '';
 	var cls = opts.cls ? (' class="' + opts.cls + '"') : '';
