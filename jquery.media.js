@@ -65,7 +65,7 @@ $.fn.media = function(options, f1, f2) {
 		var r = getTypesRegExp();
 		var m = r.exec(o.src.toLowerCase()) || [''];
 
-		m[0] = o.type || m.shift();
+		o.type ? m[0] = o.type : m.shift();
 		for (var i=0; i < m.length; i++) {
 			fn = m[i].toLowerCase();
 			if (isDigit(fn[0])) fn = 'fn' + fn; // fns can't begin with numbers
